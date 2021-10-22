@@ -1,0 +1,69 @@
+﻿@{
+    ViewBag.Title = "Author Details";
+}
+
+<a href="@Url.Action("Index", "Authors")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Author Details</h2>
+
+<ul>
+    <li>ID: <span id="id">@TempData["Id"]</span></li>
+    <li>First Name: <span id="first-name"></span></li>
+    <li>Last Name: <span id="last-name"></span></li>
+
+    <li id="products">
+        Products:
+        <ol>
+            <li class="product-details">
+                <ul class="card">
+                    <li>ID: <span class="product-id"></span></li>
+                    <li>Title: <span class="product-title"></span></li>
+                    <li>Producer: <span class="product-producer"></span></li>
+                    <li>Type: <span class="product-type"></span></li>
+                    <li>Price: <span class="product-price"></span></li>
+                    <li>Number Available: <span class="product-number-available"></span></li>
+                </ul>
+            </li>
+        </ol>
+    </li>
+</ul>
+
+@section scripts
+{
+    <script>
+        $(function () {
+            $("#products").toggle(false);
+            let productTypes = ["None", "Newspaper", "Magazine", "Book", "Pen", "Pencil", "Other"];
+            let productDetails = $(".product-details").clone(false);
+
+            $.ajax({
+                url: "/api/authors/" + $("#id").text(),
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#first-name").text(response.firstName);
+                    $("#last-name").text(response.lastName);
+
+                    let products = response.products;
+                    if (products.length > 0) {
+                        for (let i = 0; i < products.length - 1; i++) {
+                            $("#products > ol").append(productDetails.clone(false));
+                        };
+
+                        $.each(products, function (index, product) {
+                            $("#products .product-id").eq(index).text(product.id);
+                            $("#products .product-title").eq(index).text(product.title);
+                            $("#products .product-producer").eq(index).text(product.producer.name);
+                            $("#products .product-type").eq(index).text(productTypes[product.type]);
+                            $("#products .product-price").eq(index).text(product.price);
+                            $("#products .product-number-available").eq(index).text(product.numberAvailable);
+                        });
+
+                        $("#products").toggle(true);
+                    }
+                });
+        });
+    </script>
+}

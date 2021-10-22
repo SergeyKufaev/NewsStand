@@ -1,0 +1,73 @@
+﻿@{
+    ViewBag.Title = "Customer Details";
+}
+
+<a href="@Url.Action("Index", "Customers")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Customer Details</h2>
+
+<ul>
+    <li>ID: <span id="id">@TempData["Id"]</span></li>
+    <li>First Name: <span id="first-name"></span></li>
+    <li>Last Name: <span id="last-name"></span></li>
+    <li>Phone Number: <span id="phone-number"></span></li>
+    <li id="purchases">
+        Purchases:
+        <ol>
+            <li class="purchase-details">
+                <ul class="card">
+                    <li>ID: <span class="purchase-id"></span></li>
+                    <li class="purchase-products">
+                        Products:
+                        <ol></ol>
+                    </li>
+                    <li>Total Price: <span class="purchase-total-price"></span></li>
+                    <li>Date: <span class="purchase-date"></span></li>
+                </ul>
+            </li>
+        </ol>
+    </li>
+</ul>
+
+@section scripts
+{
+    <script src="~/lib/moment.js/moment.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#purchases").toggle(false);
+            let purchaseDetails = $(".purchase-details").clone(false);
+
+            $.ajax({
+                url: "/api/customers/" + $("#id").text(),
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#first-name").text(response.firstName);
+                    $("#last-name").text(response.lastName);
+                    $("#phone-number").text(response.phoneNumber);
+
+                    let purchases = response.purchases;
+                    if (purchases.length > 0) {
+                        for (let i = 0; i < purchases.length - 1; i++) {
+                            $("#purchases > ol").append(purchaseDetails.clone(false));
+                        }
+
+                        $.each(purchases, function (index, purchase) {
+                            $("#purchases .purchase-id").eq(index).text(purchase.id);
+                            $("#purchases .purchase-total-price").eq(index).text(purchase.totalPrice);
+                            $("#purchases .purchase-date").eq(index).text(moment(purchase.date).format("MMMM D, YYYY"));
+
+                            $.each(purchase.purchaseProducts, function (idx, purchaseProduct) {
+                                $("#purchases .purchase-details").eq(index).find("ol").append($("<li></li>").text(`${purchaseProduct.product.title} (× ${purchaseProduct.quantity}, Price: ${purchaseProduct.price})`));
+                            });
+                        });
+
+                        $("#purchases").toggle(true);
+                    }
+                });
+        });
+    </script>
+}

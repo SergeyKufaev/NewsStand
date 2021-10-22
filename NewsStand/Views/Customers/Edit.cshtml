@@ -1,0 +1,89 @@
+﻿@model CustomerViewModel
+@{
+    ViewBag.Title = "Edit Customer";
+}
+
+<a href="@Url.Action("Index", "Customers")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Edit Customer</h2>
+
+<div class="col-md-6">
+    <div class="card card-body bg-light">
+        <form method="post" id="edit-form">
+
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <input type="hidden" asp-for="Id" id="id" />
+
+            <div class="form-group">
+                <label asp-for="FirstName">First Name:</label>
+                <input type="text" asp-for="FirstName" class="form-control" id="first-name" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LastName">Last Name:</label>
+                <input type="text" asp-for="LastName" class="form-control" id="last-name" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="PhoneNumber">Phone Number:</label>
+                <input type="text" asp-for="PhoneNumber" class="form-control" id="phone-number" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            let customerViewModel = {
+                id: $("#id").val()
+            };
+            $.ajax("/api/customers/" + customerViewModel.id, {
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#first-name").val(response.firstName);
+                    $("#last-name").val(response.lastName);
+                    $("#phone-number").val(response.phoneNumber);
+                });
+
+            $("#edit-form").submit(function (event) {
+                customerViewModel.firstName = $("#first-name").val();
+                customerViewModel.lastName = $("#last-name").val();
+                customerViewModel.phoneNumber = $("#phone-number").val();
+
+                let customerViewModelJson = JSON.stringify(customerViewModel);
+                $.ajax({
+                    url: "/api/customers/" + customerViewModel.id,
+                    method: "PUT",
+                    data: customerViewModelJson,
+                    dataType: "json",
+                    contentType: "application/json",
+                })
+                    .done(function () {
+                        toastr.success("Customer successfully updated");
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    });
+                event.preventDefault();
+            })
+        });
+    </script>
+}

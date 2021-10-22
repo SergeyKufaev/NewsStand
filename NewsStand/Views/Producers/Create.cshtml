@@ -1,0 +1,65 @@
+﻿@model ProducerViewModel
+@{
+    ViewBag.Title = "New Producer";
+}
+
+<a href="@Url.Action("Index", "Producers")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>New Producer</h2>
+
+<div class="col-md-6">
+    <div class="card card-body bg-light">
+        <form method="post" id="create-form">
+
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <div class="form-group">
+                <label asp-for="Name">Name:</label>
+                <input type="text" asp-for="Name" class="form-control" id="name" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#create-form").submit(function (event) {
+                let producerViewModel = {
+                    name: $("#name").val()
+                };
+
+                let producerViewModelJson = JSON.stringify(producerViewModel);
+                $.ajax({
+                    url: "/api/producers",
+                    method: "POST",
+                    data: producerViewModelJson,
+                    dataType: "json",
+                    contentType: "application/json",
+                })
+                    .done(function () {
+                        toastr.success("Producer successfully created");
+                        producerViewModel = {};
+                        $("#create-form").trigger('reset');
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    });
+                event.preventDefault();
+            })
+        });
+    </script>
+}

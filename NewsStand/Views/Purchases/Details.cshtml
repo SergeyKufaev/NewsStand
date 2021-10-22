@@ -1,0 +1,45 @@
+﻿@{
+    ViewBag.Title = "Purchase Details";
+}
+
+<a href="@Url.Action("Index", "Purchases")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Purchase Details</h2>
+
+<ul id="details">
+    <li>ID: <span id="id">@TempData["Id"]</span></li>
+    <li>Customer: <span id="customer"></span></li>
+    <li id="purchase-products">
+        Products:
+        <ol></ol>
+    </li>
+    <li>Total Price: <span id="total-price"></span></li>
+    <li>Date: <span id="date"></span></li>
+</ul>
+
+@section scripts
+{
+    <script src="~/lib/moment.js/moment.min.js"></script>
+
+    <script>
+        $(function () {
+            $.ajax({
+                url: "/api/purchases/" + $("#id").text(),
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#customer").text(`${response.customer.firstName} ${response.customer.lastName}`);
+                    $("#total-price").text(response.totalPrice);
+                    $("#date").text(moment(response.date).format("MMMM D, YYYY"));
+
+                    $.each(response.purchaseProducts, function (index, purchaseProduct) {
+                        $("#purchase-products ol").append($("<li></li>").text(`${purchaseProduct.product.title} (× ${purchaseProduct.quantity}, Price: ${purchaseProduct.price})`));
+                    });
+
+                    $("#authors").toggle(true);
+                });
+        });
+    </script>
+}

@@ -1,0 +1,201 @@
+﻿@model ProductViewModel
+@{
+    ViewBag.Title = "Edit Product";
+}
+
+<a href="@Url.Action("Index", "Products")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Edit Product</h2>
+
+<div class="col-md-6">
+    <div class="card card-body bg-light">
+        <form method="post" id="edit-form">
+
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <input type="hidden" asp-for="Id" id="id" />
+
+            <div class="form-group">
+                <label asp-for="Title">Title:</label>
+                <input type="text" asp-for="Title" class="form-control" id="title" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Type">Type:</label>
+                <select class="form-control" asp-for="Type" id="type"
+                        asp-items="Html.GetEnumSelectList<NewsStand.Core.Entities.ProductType>()">
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Price">Price:</label>
+                <input type="number" asp-for="Price" class="form-control" id="price" />
+                <span asp-validation-for="Price"></span>
+            </div>
+
+            <div class="form-group">
+                <label>Producer:</label>
+                <select class="form-control" id="producer">
+                    <option selected disabled hidden>Select Producer</option>
+                </select>
+            </div>
+
+            <div class="card form-group" id="js-toggle">
+                <h5 class="card-title">Authors</h5>
+                <div id="authors">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Full Name:</label>
+                                <select type="text" class="form-control author-select data-author-id">
+                                    <option selected disabled hidden>Select Author</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger border-0 card-footer js-delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="card">
+                        <button type="button" class="btn btn-outline-secondary border-0 shadow-none" id="js-add">Add Author</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NumberAvailable">Quantity:</label>
+                <input type="number" asp-for="NumberAvailable" class="form-control" id="numberAvailable" />
+                <span asp-validation-for="NumberAvailable" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            $("#js-toggle").toggle(false);
+
+            $("#type").on("change", function () {
+                let value = $(this).val();
+                if (value == 1 || value == 2 || value == 3) {
+                    $("#js-toggle").toggle(true);
+                }
+                else {
+                    $("#js-toggle").toggle(false);
+                }
+            });
+
+            $.ajax("/api/producers", {
+                method: "GET"
+            })
+                .then(function (response) {
+                    let producersArray = [...response];
+                    $.each(producersArray, function (index, producer) {
+                        let option = "<option value=" + producer.id + ">" + producer.name + "</option>";
+                        $(option).appendTo("#producer");
+                    });
+                });
+
+            let authors = $("#authors");
+            let author;
+
+            $.ajax("/api/authors", {
+                method: "GET"
+            })
+                .then(function (response) {
+                    let authorsArray = [...response];
+                    $.each(authorsArray, function (index, author) {
+                        let option = "<option value=" + author.id + ">" + author.fullName + "</option>";
+                        $(option).appendTo(".author-select");
+                    });
+                    author = authors.find("div:first").clone(true);
+
+                    $("#js-add").on("click", function () {
+                        author.clone(true).insertBefore($(this).parent());
+                    });
+
+                    authors.on("click", ".js-delete", function () {
+                        $(this).parent().remove();
+                    });
+                });
+
+            let productViewModel = {
+                id: $("#id").val(),
+                authorsIds: []
+            };
+
+            let authorDropdowns;
+
+            $.ajax("/api/products/" + productViewModel.id, {
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#title").val(response.title);
+                    $("#type").val(response.type);
+                    $("#price").val(response.price);
+                    $("#producer").val(response.producerId);
+                    $("#numberAvailable").val(response.numberAvailable);
+
+                    if (response.type == 1 || response.type == 2 || response.type == 3) {
+                        let count = response.authorsIds.length;
+                        for (let i = 0; i < count - 1; i++) {
+                            author.clone(true).insertAfter(authors.find("div:first"));
+                        }
+
+                        authorDropdowns = $("#authors .data-author-id");
+                        for (let i = 0; i < count; i++) {
+                            let authorId = response.authorsIds[i];
+                            authorDropdowns.eq(i).val(authorId);
+                        }
+
+                        $("#js-toggle").toggle(true);
+                    }
+                });
+
+            $("#edit-form").submit(function (event) {
+                productViewModel.title = $("#title").val();
+                productViewModel.type = $("#type").val();
+                productViewModel.price = $("#price").val();
+                productViewModel.producerId = $("#producer").val();
+                productViewModel.numberAvailable = $("#numberAvailable").val();
+                productViewModel.authorsIds = [];
+
+                if (productViewModel.type == 1 || productViewModel.type == 2 || productViewModel.type == 3) {
+                    let authors = $("#authors .data-author-id");
+                    for (let i = 0; i < authors.length; i++) {
+                        let authorId = authors.eq(i).val();
+                        productViewModel.authorsIds.push(authorId);
+                    }
+                }
+
+                let productViewModelJson = JSON.stringify(productViewModel);
+                $.ajax({
+                    url: "/api/products/" + productViewModel.id,
+                    method: "PUT",
+                    data: productViewModelJson,
+                    dataType: "json",
+                    contentType: "application/json",
+                })
+                    .done(function () {
+                        toastr.success("Product successfully updated");
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    });
+                event.preventDefault();
+            });
+        });
+    </script>
+}

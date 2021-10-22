@@ -1,0 +1,81 @@
+﻿@model AuthorViewModel
+@{
+    ViewBag.Title = "Edit Author";
+}
+
+<a href="@Url.Action("Index", "Authors")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Edit Author</h2>
+
+<div class="col-md-6">
+    <div class="card card-body bg-light">
+        <form method="post" id="edit-form">
+
+            <div asp-validation-summary="ModelOnly"></div>
+
+            <input type="hidden" asp-for="Id" id="id" />
+
+            <div class="form-group">
+                <label asp-for="FirstName">First Name:</label>
+                <input type="text" asp-for="FirstName" class="form-control" id="first-name" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="LastName">Last Name:</label>
+                <input type="text" asp-for="LastName" class="form-control" id="last-name" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            let authorViewModel = {
+                id: $("#id").val()
+            };
+            $.ajax("/api/authors/" + authorViewModel.id, {
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#first-name").val(response.firstName);
+                    $("#last-name").val(response.lastName);
+                });
+
+            $("#edit-form").submit(function (event) {
+                authorViewModel.firstName = $("#first-name").val();
+                authorViewModel.lastName = $("#last-name").val();
+
+                let authorViewModelJson = JSON.stringify(authorViewModel);
+                $.ajax({
+                    url: "/api/authors/" + authorViewModel.id,
+                    method: "PUT",
+                    data: authorViewModelJson,
+                    dataType: "json",
+                    contentType: "application/json",
+                })
+                    .done(function () {
+                        toastr.success("Author successfully updated");
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    });
+                event.preventDefault();
+            })
+        });
+    </script>
+}

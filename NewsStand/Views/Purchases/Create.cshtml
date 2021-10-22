@@ -1,0 +1,128 @@
+﻿@{
+    ViewBag.Title = "New Purchase";
+}
+
+<a href="@Url.Action("Index", "Purchases")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>New Purchase</h2>
+
+<div class="col-md-6">
+    <div class="card card-body bg-light">
+        <form method="post" id="create-form">
+
+            <div class="form-group">
+                <label>Customer:</label>
+                <select class="form-control" id="customer" required>
+                    <option selected disabled hidden>Select Customer</option>
+                </select>
+            </div>
+
+            <div class="card form-group">
+                <h5 class="card-title">Products</h5>
+                <div id="purchase-products">
+                    <div class="card bg-light">
+                        <div class="card-body"><partial name="_PurchaseProduct" /></div>
+                        <button type="button" class="btn btn-outline-danger border-0 card-footer js-delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="card">
+                        <button type="button" class="btn btn-outline-secondary border-0 shadow-none" id="js-add">Add Product</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            $.ajax({
+                url: "/api/customers",
+                method: "GET"
+            })
+                .then(function (response) {
+                    let customersArray = [...response];
+                    $.each(customersArray, function (index, customer) {
+                        let option = "<option value=" + customer.id + ">" + `${customer.firstName} ${customer.lastName}` + "</option>";
+                        $(option).appendTo("#customer");
+                    });
+                });
+
+            let purchaseProducts = $("#purchase-products");
+            let purchaseProduct;
+            let productsArray = [];
+
+            $.ajax({
+                url: "/api/products?includeProducers=false",
+                method: "GET"
+            })
+                .then(function (response) {
+                    productsArray = [...response];
+                    $.each(productsArray, function (index, product) {
+                        let option = "<option value=" + product.id + ">" + product.title + "</option>";
+                        $(option).appendTo(".product");
+                    });
+                    purchaseProduct = purchaseProducts.find("div:first").clone(true);
+
+                    $("#js-add").on("click", function () {
+                        purchaseProduct.clone(true).insertBefore($(this).parent());
+                    });
+
+                    purchaseProducts.on("click", ".js-delete", function () {
+                        $(this).parent().remove();
+                    });
+                });
+
+            $("#create-form").submit(function (event) {
+                let purchaseViewModel = {
+                    customerId: $("#customer").val(),
+                    purchaseProducts: []
+                };
+
+                let products = $("#purchase-products .product");
+                let quantities = $("#purchase-products .quantity");
+                for (let i = 0; i < products.length; i++) {
+                    let productId = products.eq(i).val();
+                    let price = productsArray.find((element, index, array) => element.id == productId).price;
+                    let quantity = quantities.eq(i).val();
+                    let purhaseProduct = {
+                        productId: productId,
+                        price: price,
+                        quantity: quantity
+                    };
+                    purchaseViewModel.purchaseProducts.push(purhaseProduct);
+                }
+
+                let purchaseViewModelJson = JSON.stringify(purchaseViewModel);
+                $.ajax({
+                    url: "/api/purchases",
+                    method: "POST",
+                    data: purchaseViewModelJson,
+                    dataType: "json",
+                    contentType: "application/json",
+                })
+                    .done(function () {
+                        toastr.success("Purchase successfully created");
+                        purchaseViewModel = {};
+                        $("#create-form").trigger('reset');
+                    })
+                    .fail(function () {
+                        toastr.error("Something went wrong");
+                    });
+                event.preventDefault();
+            });
+        });
+    </script>
+}

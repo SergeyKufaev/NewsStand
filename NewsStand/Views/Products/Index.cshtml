@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "Products";
+}
+
+<h2>Products</h2>
+
+<p>
+    @Html.ActionLink("New Product", "Create", "Products", null, new { @class = "btn btn-primary" })
+</p>
+
+<table id="products" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Producer</th>
+            <th>Price</th>
+            <th>Available</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+@section scripts
+{
+    <link href="~/lib/datatables/css/dataTables.bootstrap4.css" rel="stylesheet" />
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/datatables/js/jquery.dataTables.js"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap4.js"></script>
+    <script src="~/lib/bootbox.js/bootbox.js"></script>
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+
+    <script>
+        $(function () {
+            let productTypes = ["None", "Newspaper", "Magazine", "Book", "Pen", "Pencil", "Other"];
+
+            let table;
+            $.ajax("/api/products/", {
+                method: "GET"
+            })
+                .then(function (response) {
+                    table = $("#products").DataTable({
+                        data: response,
+                        columns: [
+                            { data: "id" },
+                            { data: "title" },
+                            {
+                                data: "type",
+                                render: function (data) {
+                                    return productTypes[data];
+                                }
+                            },
+                            { data: "producer.name" },
+                            { data: "price" },
+                            { data: "numberAvailable" },
+                            {
+                                data: "id",
+                                render: function (data) {
+                                    return "<a class='btn btn-outline-secondary btn-sm' href='/products/details/" + data + "'><i class='fas fa-search-plus'></i></a>   " +
+                                        "<a class='btn btn-outline-secondary btn-sm' href='/products/edit/" + data + "'><i class='fas fa-edit'></i></a>   " +
+                                        "<button class='btn btn-outline-secondary btn-sm js-delete' data-product-id=" + data + "><i class='fas fa-trash'></i></button>";
+                                }
+                            }
+                        ]
+                    });
+                });
+
+            $("#products").on("click", ".js-delete", function () {
+                let button = $(this);
+                bootbox.confirm({
+                    message: "Are you sure you want to delete this product?",
+                    buttons: {
+                        confirm: {
+                            label: "Yes",
+                            className: "btn-danger"
+                        },
+                        cancel: {
+                            label: "No"
+                        }
+                    },
+                    callback: function (result) {
+                        if (result) {
+                            $.ajax({
+                                url: "/api/products/" + button.attr("data-product-id"),
+                                method: "DELETE",
+                                success: function () {
+                                    toastr.success("Product successfully deleted");
+                                    table.row(button.parents("tr")).remove().draw();
+                                },
+                                error: function () {
+                                    toastr.error("Something went wrong");
+                                }
+                            });
+                        }
+                    },
+                    centerVertical: true
+                });
+            });
+        });
+    </script>
+}

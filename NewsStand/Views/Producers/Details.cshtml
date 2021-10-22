@@ -1,0 +1,80 @@
+﻿@{
+    ViewBag.Title = "Producer Details";
+}
+
+<a href="@Url.Action("Index", "Producers")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Producer Details</h2>
+
+<ul>
+    <li>ID: <span id="id">@TempData["Id"]</span></li>
+    <li>Name: <span id="name"></span></li>
+
+    <li id="products">
+        Products:
+        <ol>
+            <li class="product-details">
+                <ul class="card">
+                    <li>ID: <span class="product-id"></span></li>
+                    <li>Title: <span class="product-title"></span></li>
+                    <li>Type: <span class="product-type"></span></li>
+                    <li>Price: <span class="product-price"></span></li>
+                    <li class="authors">
+                        Authors:
+                        <ol></ol>
+                    </li>
+                    <li>Number Available: <span class="product-number-available"></span></li>
+                </ul>
+            </li>
+        </ol>
+    </li>
+</ul>
+
+@section scripts
+{
+    <script>
+        $(function () {
+            $("#products").toggle(false);
+            $("#products .authors").toggle(false);
+            let productTypes = ["None", "Newspaper", "Magazine", "Book", "Pen", "Pencil", "Other"];
+            let productDetails = $(".product-details").clone(false);
+
+            $.ajax({
+                url: "/api/producers/" + $("#id").text(),
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#name").text(response.name);
+
+                    let products = response.products;
+                    if (products.length > 0) {
+                        for (let i = 0; i < products.length - 1; i++) {
+                            $("#products > ol").append(productDetails.clone(false));
+                        };
+
+                        $.each(products, function (index, product) {
+                            $("#products .product-id").eq(index).text(product.id);
+                            $("#products .product-title").eq(index).text(product.title);
+                            $("#products .product-type").eq(index).text(productTypes[product.type]);
+                            $("#products .product-price").eq(index).text(product.price);
+                            $("#products .product-number-available").eq(index).text(product.numberAvailable);
+
+                            let authors = product.authors;
+                            if ((product.type == 1 || product.type == 2 || product.type == 3) && authors.length > 0) {
+                                $.each(authors, function (idx, author) {
+                                    $("#products .product-details").eq(index).find("ol").append($("<li></li>").text(`${author.firstName} ${author.lastName}`));
+                                });
+
+                                $("#products .authors").eq(index).toggle(true);
+                            }
+
+                        });
+
+                        $("#products").toggle(true);
+                    }
+                });
+        });
+    </script>
+}

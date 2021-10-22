@@ -1,0 +1,52 @@
+﻿@{
+    ViewBag.Title = "Product Details";
+}
+
+<a href="@Url.Action("Index", "Products")" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left"></i> Back
+</a>
+
+<h2>Product Details</h2>
+
+<ul id="details">
+    <li>ID: <span id="id">@TempData["Id"]</span></li>
+    <li>Title: <span id="title"></span></li>
+    <li>Type: <span id="type"></span></li>
+    <li>Price: <span id="price"></span></li>
+    <li>Producer: <span id="producer"></span></li>
+    <li id="authors">
+        Authors:
+        <ol></ol>
+    </li>
+    <li>Number Available: <span id="numberAvailable"></span></li>
+</ul>
+
+@section scripts
+{
+    <script>
+        $(function () {
+            $("#authors").toggle(false);
+            let productTypes = ["None", "Newspaper", "Magazine", "Book", "Pen", "Pencil", "Other"];
+
+            $.ajax({
+                url: "/api/products/" + $("#id").text(),
+                method: "GET"
+            })
+                .then(function (response) {
+                    $("#title").text(response.title);
+                    $("#type").text(productTypes[response.type]);
+                    $("#price").text(response.price);
+                    $("#producer").text(response.producer.name);
+                    $("#numberAvailable").text(response.numberAvailable);
+
+                    if ((response.type == 1 || response.type == 2 || response.type == 3) && response.authors.length > 0) {
+                        $.each(response.authors, function (index, author) {
+                            $("#authors ol").append($("<li></li>").text(author.fullName));
+                        });
+
+                        $("#authors").toggle(true);
+                    }
+                });
+        });
+    </script>
+}

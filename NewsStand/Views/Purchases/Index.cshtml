@@ -1,0 +1,102 @@
+﻿@{
+    ViewBag.Title = "Purchases";
+}
+
+<h2>Purchases</h2>
+
+<p>
+    @Html.ActionLink("New Purchase", "Create", "Purchases", null, new { @class = "btn btn-primary" })
+</p>
+
+<table id="purchases" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Total Price</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+@section scripts
+{
+    <link href="~/lib/datatables/css/dataTables.bootstrap4.css" rel="stylesheet" />
+    <link href="~/lib/toastr.js/toastr.css" rel="stylesheet" />
+    <script src="~/lib/datatables/js/jquery.dataTables.js"></script>
+    <script src="~/lib/datatables/js/dataTables.bootstrap4.js"></script>
+    <script src="~/lib/bootbox.js/bootbox.js"></script>
+    <script src="~/lib/toastr.js/toastr.min.js"></script>
+    <script src="~/lib/moment.js/moment.min.js"></script>
+
+    <script>
+        $(function () {
+            let table;
+            $.ajax("/api/purchases/", {
+                method: "GET"
+            })
+                .then(function (response) {
+                    table = $("#purchases").DataTable({
+                        data: response,
+                        columns: [
+                            { data: "id" },
+                            {
+                                data: "customer",
+                                render: (data) => `${data.firstName} ${data.lastName}`
+                            },
+                            { data: "totalPrice" },
+                            {
+                                data: "date",
+                                render: function (data) {
+                                    return moment(data).format("MMMM D, YYYY");
+                                }
+                            },
+                            {
+                                data: "id",
+                                render: function (data) {
+                                    return "<a class='btn btn-outline-secondary btn-sm' href='/purchases/details/" + data + "'><i class='fas fa-search-plus'></i></a>   " +
+                                        "<a class='btn btn-outline-secondary btn-sm' href='/purchases/edit/" + data + "'><i class='fas fa-edit'></i></a>   " +
+                                        "<button class='btn btn-outline-secondary btn-sm js-delete' data-purchase-id=" + data + "><i class='fas fa-trash'></i></button>";
+                                }
+                            }
+                        ]
+                    });
+                })
+
+            $("#purchases").on("click", ".js-delete", function () {
+                let button = $(this);
+                bootbox.confirm({
+                    message: "Are you sure you want to delete this purchase?",
+                    buttons: {
+                        confirm: {
+                            label: "Yes",
+                            className: "btn-danger"
+                        },
+                        cancel: {
+                            label: "No"
+                        }
+                    },
+                    callback: function (result) {
+                        if (result) {
+                            $.ajax({
+                                url: "/api/purchases/" + button.attr("data-purchase-id"),
+                                method: "DELETE",
+                                success: function () {
+                                    toastr.success("Purchase successfully deleted");
+                                    table.row(button.parents("tr")).remove().draw();
+                                },
+                                error: function () {
+                                    toastr.error("Something went wrong");
+                                }
+                            });
+                        }
+                    },
+                    centerVertical: true
+                });
+            });
+        });
+    </script>
+}
