@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,17 +25,17 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<ProducerViewModel>> GetProducers()
+        public async Task<ActionResult<IEnumerable<ProducerViewModel>>> GetProducers()
         {
-            var producers = _unitOfWork.Producers.GetAll();
+            var producers = await _unitOfWork.Producers.GetAllAsync();
 
             return Ok(_mapper.Map<IEnumerable<ProducerViewModel>>(producers));
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<ProducerViewModel> GetProducer(int id)
+        public async Task<ActionResult<ProducerViewModel>> GetProducer(int id)
         {
-            var producer = _unitOfWork.Producers.GetById(id);
+            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
 
             if (producer == null)
                 return NotFound();
@@ -51,7 +52,7 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult CreateProducer([FromBody] ProducerViewModel producerViewModel)
+        public async Task<ActionResult> CreateProducer([FromBody] ProducerViewModel producerViewModel)
         {
             if (!ModelState.IsValid)
             {
@@ -59,44 +60,44 @@ namespace NewsStand.Controllers.Api
             }
 
             var producer = _mapper.Map<Producer>(producerViewModel);
-            _unitOfWork.Producers.Add(producer);
+            await _unitOfWork.Producers.AddAsync(producer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return Created($"/api/producers/{producer.Id}", _mapper.Map<ProducerViewModel>(producer));
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult UpdateProducer(int id, [FromBody] ProducerViewModel producerViewModel)
+        public async Task<ActionResult> UpdateProducer(int id, [FromBody] ProducerViewModel producerViewModel)
         {
             if (id != producerViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var producer = _unitOfWork.Producers.GetById(id);
+            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
 
             if (producer == null)
                 return NotFound();
 
             //_mapper.Map(producerViewModel, producer);
             producer.Name = producerViewModel.Name;
-            _unitOfWork.Producers.Update(producer);
+            await _unitOfWork.Producers.UpdateAsync(producer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        public ActionResult DeleteProducer(int id)
+        public async Task<ActionResult> DeleteProducer(int id)
         {
-            var producer = _unitOfWork.Producers.GetById(id);
+            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
 
             if (producer == null)
                 return NotFound();
 
-            _unitOfWork.Producers.Delete(producer);
+            await _unitOfWork.Producers.DeleteAsync(producer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }

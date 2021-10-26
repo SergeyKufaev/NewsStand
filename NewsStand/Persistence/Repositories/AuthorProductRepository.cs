@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Entities;
 using NewsStand.Core.Repositories;
 
@@ -11,7 +13,7 @@ namespace NewsStand.Persistence.Repositories
         {
         }
 
-        public void AddAuthorsForProduct(int productId, List<int> authorsIds)
+        public async Task AddAuthorsForProductAsync(int productId, List<int> authorsIds)
         {
             foreach (int authorId in authorsIds)
             {
@@ -20,23 +22,23 @@ namespace NewsStand.Persistence.Repositories
                     ProductId = productId,
                     AuthorId = authorId,
                 };
-                _dbContext.AuthorProducts.Add(authorProduct);
+                await _dbContext.AuthorProducts.AddAsync(authorProduct);
             }
         }
 
-        public IReadOnlyList<Author> GetAuthorsByProductId(int productId)
+        public async Task<IReadOnlyList<Author>> GetAuthorsByProductIdAsync(int productId)
         {
-            return _dbContext.AuthorProducts
+            return await _dbContext.AuthorProducts
                 .Where(ap => ap.ProductId == productId)
                 .Select(ap => ap.Author)
-                .ToList();
+                .ToListAsync();
         }
 
-        public void UpdateAuthorsForProduct(int productId, List<int> authorsIds)
+        public async Task UpdateAuthorsForProductAsync(int productId, List<int> authorsIds)
         {
-            var authorProductsOld = _dbContext.AuthorProducts
+            var authorProductsOld = await _dbContext.AuthorProducts
                 .Where(ap => ap.ProductId == productId)
-                .ToList();
+                .ToListAsync();
 
             var authorIdsOld = authorProductsOld
                 .Select(ap => ap.AuthorId)
@@ -55,7 +57,7 @@ namespace NewsStand.Persistence.Repositories
                     AuthorId = authorId,
                     ProductId = productId
                 };
-                _dbContext.AuthorProducts.Add(authorProduct);
+                await _dbContext.AuthorProducts.AddAsync(authorProduct);
             }
         }
     }

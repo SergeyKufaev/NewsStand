@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Entities;
 using NewsStand.Core.Repositories;
@@ -11,14 +12,14 @@ namespace NewsStand.Persistence.Repositories
         {
         }
 
-        public override Producer GetById(int id)
+        public override async Task<Producer> GetByIdAsync(int id)
         {
-            return _dbContext.Producers
+            return await _dbContext.Producers
                 .Where(p => p.Id == id)
                 .Include(p => p.Products)
                 .ThenInclude(p => p.AuthorProducts)
                 .ThenInclude(ap => ap.Author)
-                .SingleOrDefault();
+                .SingleOrDefaultAsync();
         }
     }
 }

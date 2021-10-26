@@ -1,4 +1,5 @@
-﻿using NewsStand.Core.Repositories;
+﻿using System.Threading.Tasks;
+using NewsStand.Core.Repositories;
 
 namespace NewsStand.Core
 {
@@ -11,6 +12,6 @@ namespace NewsStand.Core
         IProductRepository Products { get; }
         IPurchaseRepository Purchases { get; }
         IPurchaseProductRepository PurchaseProducts { get; }
-        void Complete();
+        Task CompleteAsync();
     }
 }

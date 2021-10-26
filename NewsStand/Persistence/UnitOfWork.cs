@@ -1,4 +1,5 @@
-﻿using NewsStand.Core;
+﻿using System.Threading.Tasks;
+using NewsStand.Core;
 using NewsStand.Core.Repositories;
 using NewsStand.Persistence.Repositories;
 
@@ -28,9 +29,9 @@ namespace NewsStand.Persistence
         public IPurchaseRepository Purchases { get; private set; }
         public IPurchaseProductRepository PurchaseProducts { get; private set; }
 
-        public void Complete()
+        public async Task CompleteAsync()
         {
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

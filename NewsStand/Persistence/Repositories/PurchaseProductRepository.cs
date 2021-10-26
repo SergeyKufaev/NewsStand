@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Entities;
 using NewsStand.Core.Repositories;
 
@@ -11,11 +13,11 @@ namespace NewsStand.Persistence.Repositories
         {
         }
 
-        public void UpdateProductsForPurchase(int purchaseId, IEnumerable<PurchaseProduct> purchaseProducts)
+        public async Task UpdateProductsForPurchaseAsync(int purchaseId, IEnumerable<PurchaseProduct> purchaseProducts)
         {
-            var purchaseProductsOld = _dbContext.PurchaseProducts
+            var purchaseProductsOld = await _dbContext.PurchaseProducts
                 .Where(pp => pp.PurchaseId == purchaseId)
-                .ToList();
+                .ToListAsync();
 
             var productsIdsOld = purchaseProductsOld
                 .Select(pp => pp.ProductId)
@@ -50,7 +52,7 @@ namespace NewsStand.Persistence.Repositories
 
             foreach (var purchaseProduct in purchaseProducts.Except(purchaseProductsToUpdateNew))
             {
-                _dbContext.PurchaseProducts.Add(purchaseProduct);
+                await _dbContext.PurchaseProducts.AddAsync(purchaseProduct);
             }
         }
     }

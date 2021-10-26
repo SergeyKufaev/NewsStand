@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using NewsStand.Core.Entities;
 
 namespace NewsStand.Core.Repositories
 {
     public interface IProductRepository : IBaseRepository<Product>
     {
-        IReadOnlyList<Product> GetAll(bool includeProducers);
+        Task<IReadOnlyList<Product>> GetAllAsync(bool includeProducers);
     }
 }

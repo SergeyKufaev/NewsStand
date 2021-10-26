@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using NewsStand.Core.Entities;
 
 namespace NewsStand.Core.Repositories
 {
     public interface IAuthorProductRepository : IBaseRepository<AuthorProduct>
     {
-        IReadOnlyList<Author> GetAuthorsByProductId(int productId);
-        void UpdateAuthorsForProduct(int productId, List<int> authorsIds);
-        void AddAuthorsForProduct(int productId, List<int> authorsIds);
+        Task<IReadOnlyList<Author>> GetAuthorsByProductIdAsync(int productId);
+        Task UpdateAuthorsForProductAsync(int productId, List<int> authorsIds);
+        Task AddAuthorsForProductAsync(int productId, List<int> authorsIds);
     }
 }

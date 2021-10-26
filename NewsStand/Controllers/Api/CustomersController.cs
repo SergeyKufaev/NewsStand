@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,17 +24,17 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<CustomerViewModel>> GetCustomers()
+        public async Task<ActionResult<IEnumerable<CustomerViewModel>>> GetCustomers()
         {
-            var customers = _unitOfWork.Customers.GetAll();
+            var customers = await _unitOfWork.Customers.GetAllAsync();
 
             return Ok(_mapper.Map<IEnumerable<CustomerViewModel>>(customers));
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<CustomerViewModel> GetCustomer(int id)
+        public async Task<ActionResult<CustomerViewModel>> GetCustomer(int id)
         {
-            var customer = _unitOfWork.Customers.GetById(id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(id);
 
             if (customer == null)
                 return NotFound();
@@ -42,7 +43,7 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult CreateCustomer([FromBody] CustomerViewModel customerViewModel)
+        public async Task<ActionResult> CreateCustomer([FromBody] CustomerViewModel customerViewModel)
         {
             if (!ModelState.IsValid)
             {
@@ -50,43 +51,43 @@ namespace NewsStand.Controllers.Api
             }
 
             var customer = _mapper.Map<Customer>(customerViewModel);
-            _unitOfWork.Customers.Add(customer);
+            await _unitOfWork.Customers.AddAsync(customer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return Created($"/api/customers/{customer.Id}", _mapper.Map<CustomerViewModel>(customer));
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult UpdateCustomer(int id, [FromBody] CustomerViewModel customerViewModel)
+        public async Task<ActionResult> UpdateCustomer(int id, [FromBody] CustomerViewModel customerViewModel)
         {
             if (id != customerViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var customer = _unitOfWork.Customers.GetById(id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(id);
 
             if (customer == null)
                 return NotFound();
 
             _mapper.Map(customerViewModel, customer);
-            _unitOfWork.Customers.Update(customer);
+            await _unitOfWork.Customers.UpdateAsync(customer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        public ActionResult DeleteCustomer(int id)
+        public async Task<ActionResult> DeleteCustomer(int id)
         {
-            var customer = _unitOfWork.Customers.GetById(id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(id);
 
             if (customer == null)
                 return NotFound();
 
-            _unitOfWork.Customers.Delete(customer);
+            await _unitOfWork.Customers.DeleteAsync(customer);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }

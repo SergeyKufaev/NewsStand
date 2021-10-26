@@ -36,7 +36,7 @@ namespace NewsStand.Persistence
                 }
             }
 
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

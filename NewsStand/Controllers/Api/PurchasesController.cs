@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,17 +25,17 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<PurchaseViewModel>> GetPurchases()
+        public async Task<ActionResult<IEnumerable<PurchaseViewModel>>> GetPurchases()
         {
-            var purchases = _unitOfWork.Purchases.GetAll();
+            var purchases = await _unitOfWork.Purchases.GetAllAsync();
 
             return Ok(_mapper.Map<IEnumerable<PurchaseViewModel>>(purchases));
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<PurchaseViewModel> GetPurchase(int id)
+        public async Task<ActionResult<PurchaseViewModel>> GetPurchase(int id)
         {
-            var purchase = _unitOfWork.Purchases.GetById(id);
+            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
 
             if (purchase == null)
                 return NotFound();
@@ -43,7 +44,7 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult CreatePurchase([FromBody] PurchaseViewModel purchaseViewModel)
+        public async Task<ActionResult> CreatePurchase([FromBody] PurchaseViewModel purchaseViewModel)
         {
             if (!ModelState.IsValid)
             {
@@ -51,50 +52,50 @@ namespace NewsStand.Controllers.Api
             }
 
             var purchase = _mapper.Map<Purchase>(purchaseViewModel);
-            _unitOfWork.Purchases.Add(purchase);
+            await _unitOfWork.Purchases.AddAsync(purchase);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return Created($"/api/purchases/{purchase.Id}", _mapper.Map<PurchaseViewModel>(purchase));
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult UpdatePurchase(int id, [FromBody] PurchaseViewModel purchaseViewModel)
+        public async Task<ActionResult> UpdatePurchase(int id, [FromBody] PurchaseViewModel purchaseViewModel)
         {
             if (id != purchaseViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var purchase = _unitOfWork.Purchases.GetById(id);
+            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
 
             if (purchase == null)
                 return NotFound();
 
             //_mapper.Map(purchaseViewModel, purchase);
             purchase.CustomerId = purchaseViewModel.CustomerId;
-            _unitOfWork.Purchases.Update(purchase);
+            await _unitOfWork.Purchases.UpdateAsync(purchase);
 
             var purchaseProducts = purchaseViewModel.PurchaseProducts
                 .Select(vm => _mapper.Map<PurchaseProduct>(vm))
                 .ToList();
 
-            _unitOfWork.PurchaseProducts.UpdateProductsForPurchase(purchase.Id, purchaseProducts);
+            await _unitOfWork.PurchaseProducts.UpdateProductsForPurchaseAsync(purchase.Id, purchaseProducts);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        public ActionResult DeletePurchase(int id)
+        public async Task<ActionResult> DeletePurchase(int id)
         {
-            var purchase = _unitOfWork.Purchases.GetById(id);
+            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
 
             if (purchase == null)
                 return NotFound();
 
-            _unitOfWork.Purchases.Delete(purchase);
+            await _unitOfWork.Purchases.DeleteAsync(purchase);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }

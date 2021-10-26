@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,17 +25,17 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<ProductViewModel>> GetProducts(bool includeProducers = true)
+        public async Task<ActionResult<IEnumerable<ProductViewModel>>> GetProducts(bool includeProducers = true)
         {
-            var products = _unitOfWork.Products.GetAll(includeProducers);
+            var products = await _unitOfWork.Products.GetAllAsync(includeProducers);
 
             return Ok(_mapper.Map<IEnumerable<ProductViewModel>>(products));
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<ProductViewModel> GetProduct(int id)
+        public async Task<ActionResult<ProductViewModel>> GetProduct(int id)
         {
-            var product = _unitOfWork.Products.GetById(id);
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
 
             if (product == null)
                 return NotFound();
@@ -42,7 +43,7 @@ namespace NewsStand.Controllers.Api
             var productViewModel = _mapper.Map<ProductViewModel>(product);
 
             productViewModel.AuthorsIds = _unitOfWork.AuthorProducts
-                .GetAuthorsByProductId(product.Id)
+                .GetAuthorsByProductIdAsync(product.Id).Result
                 .Select(a => a.Id)
                 .ToList();
 
@@ -54,7 +55,7 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult CreateProduct([FromBody] ProductViewModel productViewModel)
+        public async Task<ActionResult> CreateProduct([FromBody] ProductViewModel productViewModel)
         {
             if (!ModelState.IsValid)
             {
@@ -62,26 +63,26 @@ namespace NewsStand.Controllers.Api
             }
 
             var product = _mapper.Map<Product>(productViewModel);
-            _unitOfWork.Products.Add(product);
+            await _unitOfWork.Products.AddAsync(product);
 
             if (productViewModel.AuthorsIds.Count > 0
                 && product.Type is (ProductType.Newspaper or ProductType.Magazine or ProductType.Book))
             {
-                _unitOfWork.AuthorProducts.AddAuthorsForProduct(product.Id, productViewModel.AuthorsIds);
+                await _unitOfWork.AuthorProducts.AddAuthorsForProductAsync(product.Id, productViewModel.AuthorsIds);
             }
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return Created($"/api/products/{product.Id}", _mapper.Map<ProductViewModel>(product));
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult UpdateProduct(int id, [FromBody] ProductViewModel productViewModel)
+        public async Task<ActionResult> UpdateProduct(int id, [FromBody] ProductViewModel productViewModel)
         {
             if (id != productViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var product = _unitOfWork.Products.GetById(id);
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
 
             if (product == null)
                 return NotFound();
@@ -92,29 +93,29 @@ namespace NewsStand.Controllers.Api
             product.Price = productViewModel.Price;
             product.ProducerId = productViewModel.ProducerId;
             product.NumberAvailable = productViewModel.NumberAvailable;
-            _unitOfWork.Products.Update(product);
+            await _unitOfWork.Products.UpdateAsync(product);
 
             if (productViewModel.AuthorsIds.Count > 0
                 && product.Type is (ProductType.Newspaper or ProductType.Magazine or ProductType.Book))
             {
-                _unitOfWork.AuthorProducts.UpdateAuthorsForProduct(product.Id, productViewModel.AuthorsIds);
+                await _unitOfWork.AuthorProducts.UpdateAuthorsForProductAsync(product.Id, productViewModel.AuthorsIds);
             }
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        public ActionResult DeleteProduct(int id)
+        public async Task<ActionResult> DeleteProduct(int id)
         {
-            var product = _unitOfWork.Products.GetById(id);
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
 
             if (product == null)
                 return NotFound();
 
-            _unitOfWork.Products.Delete(product);
-            _unitOfWork.Complete();
+            await _unitOfWork.Products.DeleteAsync(product);
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }

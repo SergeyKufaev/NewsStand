@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,17 +25,17 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<AuthorViewModel>> GetAuthors()
+        public async Task<ActionResult<IEnumerable<AuthorViewModel>>> GetAuthors()
         {
-            var authors = _unitOfWork.Authors.GetAll();
+            var authors = await _unitOfWork.Authors.GetAllAsync();
 
             return Ok(_mapper.Map<IEnumerable<AuthorViewModel>>(authors));
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<AuthorViewModel> GetAuthor(int id)
+        public async Task<ActionResult<AuthorViewModel>> GetAuthor(int id)
         {
-            var author = _unitOfWork.Authors.GetById(id);
+            var author = await _unitOfWork.Authors.GetByIdAsync(id);
 
             if (author == null)
                 return NotFound();
@@ -48,7 +49,7 @@ namespace NewsStand.Controllers.Api
         }
 
         [HttpPost]
-        public ActionResult CreateAuthor([FromBody] AuthorViewModel authorViewModel)
+        public async Task<ActionResult> CreateAuthor([FromBody] AuthorViewModel authorViewModel)
         {
             if (!ModelState.IsValid)
             {
@@ -56,43 +57,43 @@ namespace NewsStand.Controllers.Api
             }
 
             var author = _mapper.Map<Author>(authorViewModel);
-            _unitOfWork.Authors.Add(author);
+            await _unitOfWork.Authors.AddAsync(author);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return Created($"/api/authors/{author.Id}", _mapper.Map<AuthorViewModel>(author));
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult UpdateAuthor(int id, [FromBody] AuthorViewModel authorViewModel)
+        public async Task<ActionResult> UpdateAuthor(int id, [FromBody] AuthorViewModel authorViewModel)
         {
             if (id != authorViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var author = _unitOfWork.Authors.GetById(id);
+            var author = await _unitOfWork.Authors.GetByIdAsync(id);
 
             if (author == null)
                 return NotFound();
 
             _mapper.Map(authorViewModel, author);
-            _unitOfWork.Authors.Update(author);
+            await _unitOfWork.Authors.UpdateAsync(author);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        public ActionResult DeleteAuthor(int id)
+        public async Task<ActionResult> DeleteAuthor(int id)
         {
-            var author = _unitOfWork.Authors.GetById(id);
+            var author = await _unitOfWork.Authors.GetByIdAsync(id);
 
             if (author == null)
                 return NotFound();
 
-            _unitOfWork.Authors.Delete(author);
+            await _unitOfWork.Authors.DeleteAsync(author);
 
-            _unitOfWork.Complete();
+            await _unitOfWork.CompleteAsync();
 
             return NoContent();
         }

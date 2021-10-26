@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Entities;
@@ -26,7 +28,7 @@ namespace NewsStand.Persistence
             base.OnModelCreating(modelBuilder);
         }
 
-        public override int SaveChanges()
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
             {
@@ -40,7 +42,7 @@ namespace NewsStand.Persistence
                         break;
                 }
             }
-            return base.SaveChanges();
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

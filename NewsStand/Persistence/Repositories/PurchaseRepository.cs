@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Entities;
 using NewsStand.Core.Repositories;
@@ -12,22 +13,22 @@ namespace NewsStand.Persistence.Repositories
         {
         }
 
-        public override IReadOnlyList<Purchase> GetAll()
+        public override async Task<IReadOnlyList<Purchase>> GetAllAsync()
         {
-            return _dbContext.Purchases
+            return await _dbContext.Purchases
                 .Include(p => p.Customer)
                 .Include(p => p.PurchaseProducts)
-                .ToList();
+                .ToListAsync();
         }
 
-        public override Purchase GetById(int id)
+        public override async Task<Purchase> GetByIdAsync(int id)
         {
-            return _dbContext.Purchases
+            return await _dbContext.Purchases
                 .Where(p => p.Id == id)
                 .Include(p => p.Customer)
                 .Include(p => p.PurchaseProducts)
                 .ThenInclude(pp => pp.Product)
-                .SingleOrDefault();
+                .SingleOrDefaultAsync();
         }
     }
 }

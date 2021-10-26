@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using NewsStand.Core.Repositories;
 
@@ -14,34 +14,31 @@ namespace NewsStand.Persistence.Repositories
             _dbContext = dbContext;
         }
 
-        public virtual T GetById(int id)
+        public virtual async Task<T> GetByIdAsync(int id)
         {
-            return _dbContext.Set<T>().Find(id);
+            return await _dbContext.Set<T>().FindAsync(id);
         }
 
-        public virtual IReadOnlyList<T> GetAll()
+        public virtual async Task<IReadOnlyList<T>> GetAllAsync()
         {
-            return _dbContext.Set<T>().ToList();
+            return await _dbContext.Set<T>().ToListAsync();
         }
 
-        public T Add(T entity)
+        public async Task<T> AddAsync(T entity)
         {
-            _dbContext.Set<T>().Add(entity);
-            _dbContext.SaveChanges();
+            await _dbContext.Set<T>().AddAsync(entity);
 
             return entity;
         }
 
-        public void Delete(T entity)
+        public async Task DeleteAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);
-            _dbContext.SaveChanges();
         }
 
-        public void Update(T entity)
+        public async Task UpdateAsync(T entity)
         {
             _dbContext.Entry(entity).State = EntityState.Modified;
-            _dbContext.SaveChanges();
         }
     }
 }
