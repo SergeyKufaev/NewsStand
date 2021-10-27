@@ -9,10 +9,12 @@ namespace NewsStand.Controllers
     public class AccountController : Controller
     {
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public AccountController(SignInManager<IdentityUser> signInManager)
+        public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
         }
 
         public IActionResult Login()
@@ -43,7 +45,7 @@ namespace NewsStand.Controllers
                     }
                     else
                     {
-                        RedirectToAction("Index", "Home");
+                        return RedirectToAction("Index", "Home");
                     }
                 }
             }
@@ -58,6 +60,40 @@ namespace NewsStand.Controllers
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
+        }
+
+        public IActionResult Register()
+        {
+            if (User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegistrationViewModel registrationViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                IdentityUser user = new IdentityUser
+                {
+                    UserName = registrationViewModel.Username,
+                    Email = registrationViewModel.Email,
+                };
+
+                var result = await _userManager.CreateAsync(user, registrationViewModel.Password);
+
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, false);
+
+                    return RedirectToAction("Index", "Home");
+                }
+            }
+
+            return View(registrationViewModel);
         }
     }
 }
