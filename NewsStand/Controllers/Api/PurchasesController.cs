@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsStand.Core;
-using NewsStand.Core.Entities;
+using NewsStand.Core.Services.Interfaces;
 using NewsStand.Core.ViewModels;
 
 namespace NewsStand.Controllers.Api
@@ -15,48 +12,38 @@ namespace NewsStand.Controllers.Api
     [ApiController]
     public class PurchasesController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IPurchaseService _purchaseService;
 
-        public PurchasesController(IUnitOfWork unitOfWork, IMapper mapper)
+        public PurchasesController(IPurchaseService purchaseService)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _purchaseService = purchaseService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PurchaseViewModel>>> GetPurchases()
         {
-            var purchases = await _unitOfWork.Purchases.GetAllAsync();
+            var purchaseViewModels = await _purchaseService.GetPurchasesAsync();
 
-            return Ok(_mapper.Map<IEnumerable<PurchaseViewModel>>(purchases));
+            return Ok(purchaseViewModels);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<PurchaseViewModel>> GetPurchase(int id)
         {
-            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
+            var purchaseViewModel = await _purchaseService.GetPurchaseByIdAsync(id);
 
-            if (purchase == null)
-                return NotFound();
-
-            return Ok(_mapper.Map<PurchaseViewModel>(purchase));
+            return purchaseViewModel != null ? Ok(purchaseViewModel) : NotFound();
         }
 
         [HttpPost]
         public async Task<ActionResult> CreatePurchase([FromBody] PurchaseViewModel purchaseViewModel)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest();
-            }
 
-            var purchase = _mapper.Map<Purchase>(purchaseViewModel);
-            await _unitOfWork.Purchases.AddAsync(purchase);
+            purchaseViewModel = await _purchaseService.CreatePurchaseAsync(purchaseViewModel);
 
-            await _unitOfWork.CompleteAsync();
-
-            return Created($"/api/purchases/{purchase.Id}", _mapper.Map<PurchaseViewModel>(purchase));
+            return Created($"/api/purchases/{purchaseViewModel.Id}", purchaseViewModel);
         }
 
         [HttpPut("{id:int}")]
@@ -65,39 +52,17 @@ namespace NewsStand.Controllers.Api
             if (id != purchaseViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
+            var result = await _purchaseService.UpdatePurchaseAsync(id, purchaseViewModel);
 
-            if (purchase == null)
-                return NotFound();
-
-            //_mapper.Map(purchaseViewModel, purchase);
-            purchase.CustomerId = purchaseViewModel.CustomerId;
-            await _unitOfWork.Purchases.UpdateAsync(purchase);
-
-            var purchaseProducts = purchaseViewModel.PurchaseProducts
-                .Select(vm => _mapper.Map<PurchaseProduct>(vm))
-                .ToList();
-
-            await _unitOfWork.PurchaseProducts.UpdateProductsForPurchaseAsync(purchase.Id, purchaseProducts);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeletePurchase(int id)
         {
-            var purchase = await _unitOfWork.Purchases.GetByIdAsync(id);
+            var result = await _purchaseService.DeletePurchaseAsync(id);
 
-            if (purchase == null)
-                return NotFound();
-
-            await _unitOfWork.Purchases.DeleteAsync(purchase);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
     }
 }

@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NewsStand.Core;
+using NewsStand.Core.Services;
+using NewsStand.Core.Services.Interfaces;
 using NewsStand.Persistence;
 using Newtonsoft.Json;
 
@@ -46,6 +48,12 @@ namespace NewsStand
 
             services.AddControllersWithViews()
                 .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+
+            services.AddScoped<IAuthorService, AuthorService>();
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<IProducerService, ProducerService>();
+            services.AddScoped<IProductService, ProductService>();
+            services.AddScoped<IPurchaseService, PurchaseService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsStand.Core;
-using NewsStand.Core.Entities;
+using NewsStand.Core.Services.Interfaces;
 using NewsStand.Core.ViewModels;
 
 namespace NewsStand.Controllers.Api
@@ -15,56 +12,38 @@ namespace NewsStand.Controllers.Api
     [ApiController]
     public class ProducersController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IProducerService _producerService;
 
-        public ProducersController(IUnitOfWork unitOfWork, IMapper mapper)
+        public ProducersController(IProducerService producerService)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _producerService = producerService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProducerViewModel>>> GetProducers()
         {
-            var producers = await _unitOfWork.Producers.GetAllAsync();
+            var producerViewModels = await _producerService.GetProducersAsync();
 
-            return Ok(_mapper.Map<IEnumerable<ProducerViewModel>>(producers));
+            return Ok(producerViewModels);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ProducerViewModel>> GetProducer(int id)
         {
-            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
+            var producerViewModel = await _producerService.GetProducerByIdAsync(id);
 
-            if (producer == null)
-                return NotFound();
-
-            var producerViewModel = _mapper.Map<ProducerViewModel>(producer);
-
-            for (int i = 0; i < producer.Products.Count; i++)
-            {
-                var authors = producer.Products.ElementAt(i).AuthorProducts.Select(ap => ap.Author).ToList();
-                producerViewModel.Products.ElementAt(i).Authors = _mapper.Map<List<AuthorViewModel>>(authors);
-            }
-
-            return Ok(producerViewModel);
+            return producerViewModel != null ? Ok(producerViewModel) : NotFound();
         }
 
         [HttpPost]
         public async Task<ActionResult> CreateProducer([FromBody] ProducerViewModel producerViewModel)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest();
-            }
 
-            var producer = _mapper.Map<Producer>(producerViewModel);
-            await _unitOfWork.Producers.AddAsync(producer);
+            producerViewModel = await _producerService.CreateProducerAsync(producerViewModel);
 
-            await _unitOfWork.CompleteAsync();
-
-            return Created($"/api/producers/{producer.Id}", _mapper.Map<ProducerViewModel>(producer));
+            return Created($"/api/producers/{producerViewModel.Id}", producerViewModel);
         }
 
         [HttpPut("{id:int}")]
@@ -73,33 +52,17 @@ namespace NewsStand.Controllers.Api
             if (id != producerViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
+            var result = await _producerService.UpdateProducerAsync(id, producerViewModel);
 
-            if (producer == null)
-                return NotFound();
-
-            //_mapper.Map(producerViewModel, producer);
-            producer.Name = producerViewModel.Name;
-            await _unitOfWork.Producers.UpdateAsync(producer);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteProducer(int id)
         {
-            var producer = await _unitOfWork.Producers.GetByIdAsync(id);
+            var result = await _producerService.DeleteProducerAsync(id);
 
-            if (producer == null)
-                return NotFound();
-
-            await _unitOfWork.Producers.DeleteAsync(producer);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
     }
 }

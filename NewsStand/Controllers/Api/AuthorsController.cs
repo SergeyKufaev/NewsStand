@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NewsStand.Core;
-using NewsStand.Core.Entities;
+using NewsStand.Core.Services.Interfaces;
 using NewsStand.Core.ViewModels;
 
 namespace NewsStand.Controllers.Api
@@ -15,53 +12,38 @@ namespace NewsStand.Controllers.Api
     [ApiController]
     public class AuthorsController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IAuthorService _authorService;
 
-        public AuthorsController(IUnitOfWork unitOfWork, IMapper mapper)
+        public AuthorsController(IAuthorService authorService)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _authorService = authorService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AuthorViewModel>>> GetAuthors()
         {
-            var authors = await _unitOfWork.Authors.GetAllAsync();
+            var authorViewModels = await _authorService.GetAuthorsAsync();
 
-            return Ok(_mapper.Map<IEnumerable<AuthorViewModel>>(authors));
+            return Ok(authorViewModels);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<AuthorViewModel>> GetAuthor(int id)
         {
-            var author = await _unitOfWork.Authors.GetByIdAsync(id);
+            var authorViewModel = await _authorService.GetAuthorByIdAsync(id);
 
-            if (author == null)
-                return NotFound();
-
-            var authorViewModel = _mapper.Map<AuthorViewModel>(author);
-
-            var products = author.AuthorProducts.Select(ap => ap.Product).ToList();
-            authorViewModel.Products = _mapper.Map<List<ProductViewModel>>(products);
-
-            return Ok(authorViewModel);
+            return authorViewModel != null ? Ok(authorViewModel) : NotFound();
         }
 
         [HttpPost]
         public async Task<ActionResult> CreateAuthor([FromBody] AuthorViewModel authorViewModel)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest();
-            }
 
-            var author = _mapper.Map<Author>(authorViewModel);
-            await _unitOfWork.Authors.AddAsync(author);
+            authorViewModel = await _authorService.CreateAuthorAsync(authorViewModel);
 
-            await _unitOfWork.CompleteAsync();
-
-            return Created($"/api/authors/{author.Id}", _mapper.Map<AuthorViewModel>(author));
+            return Created($"/api/authors/{authorViewModel.Id}", authorViewModel);
         }
 
         [HttpPut("{id:int}")]
@@ -70,32 +52,17 @@ namespace NewsStand.Controllers.Api
             if (id != authorViewModel.Id || !ModelState.IsValid)
                 return BadRequest();
 
-            var author = await _unitOfWork.Authors.GetByIdAsync(id);
+            var result = await _authorService.UpdateAuthorAsync(id, authorViewModel);
 
-            if (author == null)
-                return NotFound();
-
-            _mapper.Map(authorViewModel, author);
-            await _unitOfWork.Authors.UpdateAsync(author);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> DeleteAuthor(int id)
         {
-            var author = await _unitOfWork.Authors.GetByIdAsync(id);
+            var result = await _authorService.DeleteAuthorAsync(id);
 
-            if (author == null)
-                return NotFound();
-
-            await _unitOfWork.Authors.DeleteAsync(author);
-
-            await _unitOfWork.CompleteAsync();
-
-            return NoContent();
+            return result ? NoContent() : NotFound();
         }
     }
 }
